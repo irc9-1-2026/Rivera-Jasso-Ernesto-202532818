@@ -1,0 +1,11 @@
+# ==============================================================================
+# requirements.txt
+# Lista de dependências del projeto
+#
+# Para instalarlas: pip install -r requirements.txt
+# ==============================================================================
+
+Flask==3.0.3
+Psutil==5.9.8
+gunicorn==22.0.0
+reportlab==4.4.2

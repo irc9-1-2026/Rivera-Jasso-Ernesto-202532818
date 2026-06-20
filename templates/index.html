@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SYS // MONITOR</title>
+
+<style>
+  :root{
+    --bg:        #000000;
+    --bg-panel:  #0a0a0a;
+    --line:      #1c1c1c;
+    --line-soft: #141414;
+    --text:      #d4d4d4;
+    --text-dim:  #6b6b6b;
+    --text-faint:#3a3a3a;
+    --amber:     #ffb000;
+    --amber-dim: #7a5500;
+    --green:     #3ddc84;
+    --green-dim: #1d6b41;
+    --red:       #ff3b3b;
+  }
+
+  *{ box-sizing: border-box; }
+
+  ::selection{ background: var(--amber); color: #000; }
+
+  html, body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "JetBrains Mono","IBM Plex Mono",Consolas,monospace;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* sutil textura de scanlines/noise sobre todo el fondo */
+  body::before{
+    content:"";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.018) 0px,
+      rgba(255,255,255,0.018) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    mix-blend-mode: overlay;
+  }
+
+  a{ color: inherit; }
+
+  /* ---------- HEADER ---------- */
+  header{
+    border-bottom: 1px solid var(--line);
+    padding: 22px 6%;
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+    flex-wrap: wrap;
+    background:
+      linear-gradient(180deg, rgba(255,176,0,0.04), transparent 60%);
+  }
+
+  .brand{
+    display:flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+
+  .brand .dot{
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 8px 2px rgba(255,176,0,0.55);
+    display:inline-block;
+    transform: translateY(-1px);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes pulse{
+    0%, 100%{ opacity:1; }
+    50%{ opacity:.35; }
+  }
+
+  h1{
+    margin:0;
+    font-size: 19px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #f5f5f5;
+    font-weight: 600;
+  }
+
+  header p{
+    margin: 6px 0 0;
+    color: var(--text-dim);
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+  }
+
+  .meta{
+    text-align: right;
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    line-height: 1.6;
+  }
+
+  .meta .estado{
+    color: var(--green);
+  }
+
+  .boton{
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    background: transparent;
+    padding: 10px 16px;
+    text-decoration: none;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+    white-space: nowrap;
+  }
+
+  .boton:hover{
+    background: var(--amber);
+    color: #000;
+    border-color: var(--amber);
+  }
+
+  .boton::before{
+    content: "↓";
+  }
+
+  /* ---------- LAYOUT ---------- */
+  main{
+    width: 88%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 34px 0 10px;
+  }
+
+  .label-seccion{
+    display:flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 0 0 14px;
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .label-seccion .idx{
+    color: var(--amber);
+  }
+
+  .label-seccion .rule{
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    margin-bottom: 34px;
+    border: 1px solid var(--line);
+  }
+
+  .card, .panel{
+    background: var(--bg-panel);
+    padding: 24px 22px;
+  }
+
+  .card h2, .panel h2{
+    margin: 0 0 16px;
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 500;
+    display:flex;
+    justify-content: space-between;
+  }
+
+  .card h2 .tag{ color: var(--text-faint); }
+
+  .valor{
+    font-size: 40px;
+    font-weight: 600;
+    color: #f5f5f5;
+    letter-spacing: 0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .valor .unidad{
+    font-size: 16px;
+    color: var(--text-dim);
+    margin-left: 4px;
+    font-weight: 400;
+  }
+
+  /* barra estilo VU-meter segmentada */
+  .barra{
+    margin-top: 18px;
+    display:grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 3px;
+    height: 14px;
+  }
+
+  .barra span{
+    background: var(--line-soft);
+    border-radius: 1px;
+  }
+
+  .barra span.activo-cpu{ background: var(--amber); }
+  .barra span.activo-mem{ background: var(--green); }
+  .barra span.alerta{ background: var(--red); }
+
+  .panel{
+    border: 1px solid var(--line);
+    margin-bottom: 34px;
+  }
+
+  .detalle{
+    color: var(--text);
+    line-height: 2;
+    font-size: 13px;
+  }
+
+  .detalle .k{
+    color: var(--text-dim);
+    display:inline-block;
+    width: 170px;
+  }
+
+  .detalle .v{
+    color: #f0f0f0;
+  }
+
+  canvas{
+    width: 100%;
+    height: 280px;
+    background:
+      linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box,
+      repeating-linear-gradient(
+        to right, var(--line-soft) 0, var(--line-soft) 1px, transparent 1px, transparent calc(100% / 12)
+      );
+    border-top: 1px solid var(--line);
+    margin-top: 6px;
+    display:block;
+  }
+
+  .leyenda{
+    display:flex;
+    gap: 22px;
+    margin-top: 12px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+  }
+
+  .leyenda span{
+    display:inline-flex;
+    align-items:center;
+    gap: 7px;
+    text-transform: uppercase;
+  }
+
+  .swatch{
+    width: 10px; height: 10px; display:inline-block;
+  }
+  .swatch.cpu{ background: var(--amber); }
+  .swatch.mem{ background: var(--green); }
+
+  table{
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6px;
+    font-size: 12.5px;
+  }
+
+  th, td{
+    padding: 11px 10px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+  }
+
+  th{
+    color: var(--text-dim);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 10.5px;
+    border-bottom: 1px solid var(--amber-dim);
+  }
+
+  td{ color: var(--text); font-variant-numeric: tabular-nums; }
+
+  tbody tr:hover{
+    background: rgba(255,176,0,0.045);
+  }
+
+  td.pid{ color: var(--text-dim); }
+  td.cpu-val{ color: var(--amber); font-weight: 600; }
+
+  footer{
+    text-align: center;
+    padding: 26px;
+    color: var(--text-faint);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-top: 1px solid var(--line);
+    margin-top: 10px;
+  }
+
+  @media (max-width: 900px){
+    .grid{ grid-template-columns: 1fr; }
+    header{ flex-direction: column; align-items: flex-start; }
+    .meta{ text-align: left; }
+    .detalle .k{ width: auto; display:block; color: var(--text-faint); font-size: 11px; }
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  <div>
+    <div class="brand">
+      <span class="dot"></span>
+      <h1>Monitor de Sistema</h1>
+    </div>
+    <p>Panel de control · Flask + psutil · historial en vivo + reporte PDF</p>
+  </div>
+
+  <div class="meta">
+    <div>Estado del enlace: <span class="estado">● ACTIVO</span></div>
+    <div>Refresco automático: 3s</div>
+  </div>
+
+  <a class="boton" href="/reporte">Descargar PDF</a>
+</header>
+
+<main>
+
+  <div class="label-seccion"><span class="idx">// 01</span> Lecturas en tiempo real <span class="rule"></span></div>
+
+  <section class="grid">
+    <div class="card">
+      <h2>CPU <span class="tag">[core]</span></h2>
+      <div class="valor" id="cpu">0<span class="unidad">%</span></div>
+      <div class="barra" id="barra-cpu"></div>
+    </div>
+
+    <div class="card">
+      <h2>Memoria RAM <span class="tag">[mem]</span></h2>
+      <div class="valor" id="memoria">0<span class="unidad">%</span></div>
+      <div class="barra" id="barra-memoria"></div>
+    </div>
+
+    <div class="card">
+      <h2>Último escaneo <span class="tag">[ts]</span></h2>
+      <div class="valor" id="fecha" style="font-size:24px;">---</div>
+    </div>
+  </section>
+
+  <div class="label-seccion"><span class="idx">// 02</span> Información del sistema <span class="rule"></span></div>
+
+  <section class="panel">
+    <div class="detalle" id="info-sistema">
+      Cargando datos...
+    </div>
+  </section>
+
+  <div class="label-seccion"><span class="idx">// 03</span> Historial de recursos <span class="rule"></span></div>
+
+  <section class="panel">
+    <canvas id="grafica" width="900" height="280"></canvas>
+    <div class="leyenda">
+      <span><span class="swatch cpu"></span>CPU</span>
+      <span><span class="swatch mem"></span>RAM</span>
+    </div>
+  </section>
+
+  <div class="label-seccion"><span class="idx">// 04</span> Top procesos por CPU <span class="rule"></span></div>
+
+  <section class="panel">
+    <table>
+      <thead>
+        <tr>
+          <th>PID</th>
+          <th>Proceso</th>
+          <th>CPU %</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-procesos">
+        <tr>
+          <td colspan="3">Cargando procesos...</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+</main>
+
+<footer>
+  Proyecto 1 · Unidad II · Monitor de Sistema
+</footer>
+
+<script>
+  function pintarBarraSegmentada(contenedor, porcentaje, claseActivo){
+    contenedor.innerHTML = "";
+    const total = 24;
+    const activos = Math.round((porcentaje / 100) * total);
+
+    for (let i = 0; i < total; i++){
+      const seg = document.createElement("span");
+      const esCritico = porcentaje > 85 && i >= total - 3;
+      if (i < activos){
+        seg.className = esCritico ? "alerta" : claseActivo;
+      }
+      contenedor.appendChild(seg);
+    }
+  }
+
+  function dibujarGrafica(historial) {
+    const canvas = document.getElementById("grafica");
+    const ctx = canvas.getContext("2d");
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const margen = 45;
+    const ancho = canvas.width - margen * 2;
+    const alto = canvas.height - margen * 2;
+
+    ctx.strokeStyle = "#1c1c1c";
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.moveTo(margen, margen);
+    ctx.lineTo(margen, canvas.height - margen);
+    ctx.lineTo(canvas.width - margen, canvas.height - margen);
+    ctx.stroke();
+
+    ctx.fillStyle = "#6b6b6b";
+    ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.fillText("100", 10, margen + 4);
+    ctx.fillText("0", 22, canvas.height - margen + 4);
+
+    if (historial.length < 2) return;
+
+    function puntoX(i) {
+      return margen + (i * ancho / (historial.length - 1));
+    }
+
+    function puntoY(valor) {
+      return canvas.height - margen - (valor * alto / 100);
+    }
+
+    function linea(dato, color) {
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+
+      historial.forEach((item, i) => {
+        const x = puntoX(i);
+        const y = puntoY(item[dato]);
+
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+
+      ctx.stroke();
+
+      // puntos discretos sobre la línea, estilo lectura de instrumento
+      ctx.fillStyle = color;
+      historial.forEach((item, i) => {
+        if (i % 4 !== 0) return;
+        const x = puntoX(i);
+        const y = puntoY(item[dato]);
+        ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
+      });
+    }
+
+    linea("cpu", "#ffb000");
+    linea("memoria", "#3ddc84");
+  }
+
+  async function cargarDatos() {
+    const respuesta = await fetch("/datos");
+    const datos = await respuesta.json();
+
+    document.getElementById("cpu").innerHTML = datos.cpu + '<span class="unidad">%</span>';
+    document.getElementById("memoria").innerHTML = datos.memoria + '<span class="unidad">%</span>';
+    document.getElementById("fecha").textContent = datos.fecha;
+
+    pintarBarraSegmentada(document.getElementById("barra-cpu"), datos.cpu, "activo-cpu");
+    pintarBarraSegmentada(document.getElementById("barra-memoria"), datos.memoria, "activo-mem");
+
+    document.getElementById("info-sistema").innerHTML = `
+      <div><span class="k">Sistema operativo</span><span class="v">${datos.os} ${datos.version_os}</span></div>
+      <div><span class="k">Arquitectura</span><span class="v">${datos.arquitectura}</span></div>
+      <div><span class="k">Hostname</span><span class="v">${datos.hostname}</span></div>
+      <div><span class="k">Versión de Python</span><span class="v">${datos.python_version}</span></div>
+    `;
+
+    const tabla = document.getElementById("tabla-procesos");
+    tabla.innerHTML = "";
+
+    datos.procesos.forEach(proceso => {
+      tabla.innerHTML += `
+        <tr>
+          <td class="pid">${proceso.pid}</td>
+          <td>${proceso.name}</td>
+          <td class="cpu-val">${proceso.cpu_percent}%</td>
+        </tr>
+      `;
+    });
+
+    dibujarGrafica(datos.historial);
+  }
+
+  cargarDatos();
+  setInterval(cargarDatos, 3000);
+</script>
+
+</body>
+</html>
