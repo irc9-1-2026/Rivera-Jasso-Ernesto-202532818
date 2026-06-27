@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Monitor de Logs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background: #f4f4f4;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 600px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+        }
+
+        button {
+            padding: 10px 15px;
+            background: #2c7be5;
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #1a5dcc;
+        }
+
+        pre {
+            background: #111;
+            color: #0f0;
+            padding: 15px;
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Analizador de Logs SSH</h2>
+
+    <input type="text" id="host" placeholder="Host" value="{{ host }}">
+    <input type="text" id="usuario" placeholder="Usuario" value="{{ usuario }}">
+    <input type="password" id="password" placeholder="Contraseña">
+    <input type="text" id="ruta_remota" placeholder="Ruta remota" value="{{ ruta_remota }}">
+
+    <button onclick="analizar()">Analizar logs</button>
+
+    <div id="error" class="error"></div>
+
+    <pre id="resultado"></pre>
+</div>
+
+<script>
+async function analizar() {
+    const payload = {
+        host: document.getElementById("host").value,
+        usuario: document.getElementById("usuario").value,
+        password: document.getElementById("password").value,
+        ruta_remota: document.getElementById("ruta_remota").value
+    };
+
+    document.getElementById("error").innerText = "";
+    document.getElementById("resultado").innerText = "Procesando...";
+
+    try {
+        const res = await fetch("/analizar", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            document.getElementById("resultado").innerText = "";
+            document.getElementById("error").innerText = data.error || "Error desconocido";
+            return;
+        }
+
+        document.getElementById("resultado").innerText =
+            JSON.stringify(data, null, 2);
+
+    } catch (err) {
+        document.getElementById("error").innerText = "Error de conexión";
+        document.getElementById("resultado").innerText = "";
+    }
+}
+</script>
+
+</body>
+</html>
