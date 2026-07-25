@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Docker de Estatus</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 24px;
+      margin: 0;
+    }
+
+    h1 {
+      color: #38bdf8;
+      margin-bottom: 4px;
+    }
+
+    .subtitulo {
+      color: #94a3b8;
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+
+    #ts {
+      color: #94a3b8;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
+    .resumen {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .r-card {
+      min-width: 130px;
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 14px 20px;
+      text-align: center;
+    }
+
+    .r-num {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .r-ok { color: #4ade80; }
+    .r-err { color: #f87171; }
+
+    .r-label {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 16px;
+      border-left: 4px solid #334155;
+      overflow-wrap: anywhere;
+    }
+
+    .card.ok { border-left-color: #4ade80; }
+    .card.err { border-left-color: #f87171; }
+
+    .c-name {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .b-ok {
+      background: #14532d;
+      color: #4ade80;
+    }
+
+    .b-err {
+      background: #7f1d1d;
+      color: #f87171;
+    }
+
+    .c-detail {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 7px;
+    }
+
+    .error-general {
+      padding: 16px;
+      border-radius: 8px;
+      background: #7f1d1d;
+      color: #fecaca;
+    }
+  </style>
+</head>
+<body>
+  <h1>🐳 Dashboard Docker de Estatus</h1>
+  <p class="subtitulo">Flask + Gunicorn + nginx administrados con Docker Compose</p>
+  <div id="ts">Cargando información...</div>
+  <div class="resumen" id="resumen"></div>
+  <div class="grid" id="grid"></div>
+
+  <script>
+    async function actualizar() {
+      try {
+        const respuesta = await fetch("/api/estado");
+
+        if (!respuesta.ok) {
+          throw new Error(`HTTP ${respuesta.status}`);
+        }
+
+        const datos = await respuesta.json();
+
+        document.getElementById("ts").textContent =
+          `Última actualización: ${datos.timestamp}`;
+
+        document.getElementById("resumen").innerHTML = `
+          <div class="r-card">
+            <div class="r-num">${datos.total}</div>
+            <div class="r-label">Total</div>
+          </div>
+          <div class="r-card">
+            <div class="r-num r-ok">${datos.activos}</div>
+            <div class="r-label">Activos</div>
+          </div>
+          <div class="r-card">
+            <div class="r-num r-err">${datos.caidos}</div>
+            <div class="r-label">Caídos</div>
+          </div>
+        `;
+
+        document.getElementById("grid").innerHTML =
+          datos.servicios.map(servicio => `
+            <div class="card ${servicio.activo ? "ok" : "err"}">
+              <div class="c-name">${servicio.nombre}</div>
+              <span class="badge ${servicio.activo ? "b-ok" : "b-err"}">
+                ${servicio.activo ? "✅ ACTIVO" : "❌ CAÍDO"}
+              </span>
+              <div class="c-detail">
+                HTTP ${servicio.status ?? "N/A"} ·
+                ${servicio.latencia ?? "—"} ms
+              </div>
+              <div class="c-detail">
+                ${servicio.error ?? servicio.url}
+              </div>
+            </div>
+          `).join("");
+
+      } catch (error) {
+        document.getElementById("ts").textContent =
+          "No fue posible actualizar el dashboard.";
+
+        document.getElementById("grid").innerHTML = `
+          <div class="error-general">
+            Error al consultar la API: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    actualizar();
+    setInterval(actualizar, 30000);
+  </script>
+</body>
+</html>

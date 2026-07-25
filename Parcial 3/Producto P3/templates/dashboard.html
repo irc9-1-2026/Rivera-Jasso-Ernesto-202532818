@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel &middot; MySteamInsight</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+    <header class="encabezado">
+        <div class="contenedor">
+            <div class="logo">My<span>Steam</span>Insight</div>
+            <nav class="menu">
+                <a href="{{ url_for('inicio') }}">Inicio</a>
+                <a href="{{ url_for('buscar') }}">Buscar</a>
+                <a href="{{ url_for('logout') }}" class="boton boton-secundario">Cerrar sesión</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="contenedor">
+
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                <div class="mensajes">
+                    {% for categoria, texto in mensajes %}
+                        <div class="mensaje {{ categoria }}">{{ texto }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="perfil-cabecera">
+            {% if perfil.avatarfull %}
+                <img src="{{ perfil.avatarfull }}" alt="Avatar de {{ perfil.personaname }}">
+            {% endif %}
+            <div>
+                <h2>{{ perfil.personaname or "Jugador de Steam" }}</h2>
+                <p>
+                    {% if perfil.loccountrycode %}{{ perfil.loccountrycode }} &middot;{% endif %}
+                    {{ total_amigos }} amigo{{ 's' if total_amigos != 1 else '' }}
+                    {% if perfil.profileurl %}
+                        &middot; <a href="{{ perfil.profileurl }}" target="_blank" rel="noopener">Ver perfil en Steam</a>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <div class="acciones-dashboard">
+            <a href="{{ url_for('exportar_biblioteca') }}" class="boton boton-secundario">Exportar biblioteca (CSV)</a>
+            <a href="{{ url_for('buscar') }}" class="boton boton-secundario">Buscar juegos</a>
+        </div>
+
+        <div class="tarjetas">
+            <div class="tarjeta">
+                <h3>Juegos en tu biblioteca</h3>
+                <div class="valor">{{ estadisticas.total_juegos }}</div>
+            </div>
+            <div class="tarjeta">
+                <h3>Horas jugadas totales</h3>
+                <div class="valor">{{ estadisticas.horas_totales }}</div>
+            </div>
+            <div class="tarjeta">
+                <h3>Juego más jugado</h3>
+                <div class="valor" style="font-size:1.1rem;">{{ estadisticas.juego_mas_jugado }}</div>
+            </div>
+            <div class="tarjeta">
+                <h3>Juegos sin estrenar</h3>
+                <div class="valor">{{ estadisticas.juegos_nunca_jugados }}</div>
+            </div>
+        </div>
+
+        <section class="seccion">
+            <h2>Top de juegos por horas jugadas</h2>
+
+            {% if top_juegos %}
+                <div class="lista-juegos">
+                    {% for juego in top_juegos %}
+                        <div class="juego">
+                            <img src="https://cdn.cloudflare.steamstatic.com/steam/apps/{{ juego.appid }}/header.jpg" alt="{{ juego.name }}">
+                            <div class="info">
+                                <h4>{{ juego.name }}</h4>
+                                <p>{{ (juego.playtime_forever / 60) | round(1) }} horas totales</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="vacio">No se encontraron juegos en tu biblioteca (verifica que sea pública).</p>
+            {% endif %}
+        </section>
+
+        <section class="seccion">
+            <h2>Actividad de las últimas 2 semanas</h2>
+
+            {% if recientes %}
+                <table class="tabla-actividad">
+                    <thead>
+                        <tr>
+                            <th>Juego</th>
+                            <th>Horas (2 semanas)</th>
+                            <th>Horas totales</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for juego in recientes %}
+                            <tr>
+                                <td>{{ juego.name }}</td>
+                                <td>{{ (juego.playtime_2weeks / 60) | round(1) }}</td>
+                                <td>{{ (juego.playtime_forever / 60) | round(1) }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="vacio">No hay actividad registrada en las últimas dos semanas.</p>
+            {% endif %}
+        </section>
+
+    </main>
+
+    <footer class="pie">
+        MySteamInsight &middot; Proyecto no oficial, no afiliado a Valve ni a Steam.
+    </footer>
+
+</body>
+</html>

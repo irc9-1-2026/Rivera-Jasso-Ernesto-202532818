@@ -1,0 +1,23 @@
+# Imagen base ligera con Python 3.11
+FROM python:3.11-slim
+
+# Evita archivos .pyc y permite logs inmediatos
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Directorio de trabajo dentro del contenedor
+WORKDIR /app
+
+# Se copian primero las dependencias para aprovechar el caché de capas
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar el código y la plantilla
+COPY app.py api_dispositivos.py ./
+COPY templates/ ./templates/
+
+# Puerto interno de la aplicación principal
+EXPOSE 5000
+
+# Gunicorn ejecuta la aplicación Flask
+CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:5000", "app:app"]

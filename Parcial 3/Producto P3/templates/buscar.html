@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar &middot; MySteamInsight</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+    <header class="encabezado">
+        <div class="contenedor">
+            <div class="logo">My<span>Steam</span>Insight</div>
+            <nav class="menu">
+                <a href="{{ url_for('inicio') }}">Inicio</a>
+                <a href="{{ url_for('dashboard') }}">Panel</a>
+                <a href="{{ url_for('logout') }}" class="boton boton-secundario">Cerrar sesión</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="contenedor">
+
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                <div class="mensajes">
+                    {% for categoria, texto in mensajes %}
+                        <div class="mensaje {{ categoria }}">{{ texto }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <h1 style="color:#fff;">Buscar juegos en Steam</h1>
+
+        <form class="buscador" action="{{ url_for('buscar') }}" method="get">
+            <input
+                type="text"
+                name="q"
+                placeholder="Ej. Counter-Strike, Hades, Stardew Valley..."
+                value="{{ consulta }}"
+                autofocus
+            >
+            <button type="submit" class="boton boton-primario">Buscar</button>
+        </form>
+
+        {% if consulta %}
+            <section class="seccion">
+                <h2>Resultados para "{{ consulta }}"</h2>
+
+                {% if juegos %}
+                    <div class="lista-juegos">
+                        {% for juego in juegos %}
+                            <a class="juego" href="https://store.steampowered.com/app/{{ juego.id }}" target="_blank" rel="noopener">
+                                {% if juego.tiny_image %}
+                                    <img src="{{ juego.tiny_image }}" alt="{{ juego.name }}">
+                                {% endif %}
+                                <div class="info">
+                                    <h4>{{ juego.name }}</h4>
+                                    {% if juego.price and juego.price.final %}
+                                        <p>{{ "%.2f" | format(juego.price.final / 100) }} {{ juego.price.currency }}</p>
+                                    {% else %}
+                                        <p>Precio no disponible</p>
+                                    {% endif %}
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="vacio">No se encontraron juegos que coincidan con tu búsqueda.</p>
+                {% endif %}
+            </section>
+        {% endif %}
+
+    </main>
+
+    <footer class="pie">
+        MySteamInsight &middot; Proyecto no oficial, no afiliado a Valve ni a Steam.
+    </footer>
+
+</body>
+</html>

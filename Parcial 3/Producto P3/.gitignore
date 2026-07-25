@@ -1,0 +1,24 @@
+# Entornos virtuales
+venv/
+env/
+.venv/
+
+# Variables de entorno
+.env
+
+# Sesiones de Flask
+.flask_session/
+
+# Cache de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Archivos de editor / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Exportaciones CSV generadas por la app
+*.csv

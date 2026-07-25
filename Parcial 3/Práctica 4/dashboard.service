@@ -1,0 +1,19 @@
+[Unit]
+Description=Dashboard de Estatus API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=deploy
+Group=deploy
+WorkingDirectory=/opt/dashboard/Parcial-3/Practica-4
+EnvironmentFile=-/opt/dashboard/Parcial-3/Practica-4/.env
+ExecStart=/opt/dashboard/Parcial-3/Practica-4/venv/bin/gunicorn --workers 2 --bind 127.0.0.1:5000 app:app
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

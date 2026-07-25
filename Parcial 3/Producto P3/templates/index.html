@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySteamInsight</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+    <header class="encabezado">
+        <div class="contenedor">
+            <div class="logo">My<span>Steam</span>Insight</div>
+            <nav class="menu">
+                {% if conectado %}
+                    <a href="{{ url_for('dashboard') }}">Panel</a>
+                    <a href="{{ url_for('buscar') }}">Buscar</a>
+                    <a href="{{ url_for('logout') }}" class="boton boton-secundario">Cerrar sesión</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="boton boton-primario">Conectar con Steam</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="contenedor">
+
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                <div class="mensajes">
+                    {% for categoria, texto in mensajes %}
+                        <div class="mensaje {{ categoria }}">{{ texto }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="hero">
+            <h1>Descubre estadísticas de tu biblioteca de Steam</h1>
+            <p>
+                Conecta tu cuenta de Steam y consulta tu perfil, tus juegos
+                más jugados, tu actividad reciente y busca nuevos títulos en
+                la tienda, todo desde un solo panel.
+            </p>
+
+            {% if conectado %}
+                <a href="{{ url_for('dashboard') }}" class="boton boton-primario">Ir a mi panel</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="boton boton-primario">Conectar con Steam</a>
+            {% endif %}
+        </section>
+
+        <div class="tarjetas">
+            <div class="tarjeta">
+                <h3>Tu biblioteca</h3>
+                <p>Consulta cuántas horas has jugado y cuáles son tus juegos favoritos.</p>
+            </div>
+            <div class="tarjeta">
+                <h3>Actividad reciente</h3>
+                <p>Revisa qué has jugado en las últimas dos semanas.</p>
+            </div>
+            <div class="tarjeta">
+                <h3>Buscar juegos</h3>
+                <p>Explora el catálogo de la tienda de Steam directamente desde aquí.</p>
+            </div>
+            <div class="tarjeta">
+                <h3>Exportar datos</h3>
+                <p>Descarga tu biblioteca ordenada por horas jugadas en formato CSV.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="pie">
+        MySteamInsight &middot; Proyecto no oficial, no afiliado a Valve ni a Steam.
+    </footer>
+
+</body>
+</html>
